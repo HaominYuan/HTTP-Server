@@ -5,11 +5,14 @@
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <errno.h>
-#include "http_request.h"
 #include <unistd.h>
 #include <arpa/inet.h>
+#include "http_request.h"
+#include "priority_queue.h"
+#include "timer.h"
 
 #define MAXEVENTS 1024
+#define TIMEOUT_DEFAULT 500
 
 void do_request(void *ptr) {
 	struct http_request_s *r = ptr;
@@ -62,10 +65,17 @@ int main(int argc, char *argv[]) {
 		event.events = EPOLLIN | EPOLLET;
 		epoll_ctl(epfd, EPOLL_CTL_ADD, listenfd, &event);
 
+		timer_init();
+
+		printf("listenfd: %d  epfd: %d\n", listenfd, epfd);
 		time = -1;
 		/* 计时器在这里启动优先队列 */
 		while (1) {
+			// time = find_timer();
+			//printf("%d\n", time);
 			n = epoll_wait(epfd, events, MAXEVENTS, time);
+			handle_expire_timers();
+			
 			for (i = 0; i < n; i++) {
 				struct http_request_s *r = events[i].data.ptr;
 				fd = r->fd;
@@ -86,10 +96,10 @@ int main(int argc, char *argv[]) {
 						event.data.ptr = re;
 						event.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
 						epoll_ctl(epfd, EPOLL_CTL_ADD, infd, &event);
-						
+						add_timer(re, TIMEOUT_DEFAULT, http_close_conn);
 					}
 				} else {
-					if ((events[i].events & EPOLLERR) || 
+					if ((events[i].events & EPOLLERR) ||
 							(events[i].events & EPOLLHUP) ||
 							(!(events[i].events & EPOLLIN))) {
 						printf("epoll error fd: %d", r->fd);
@@ -100,6 +110,5 @@ int main(int argc, char *argv[]) {
 				}
 			} // for
 		} // while
-
 		return 0;
 }
