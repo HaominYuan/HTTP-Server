@@ -49,28 +49,28 @@ int find_timer() {
 }
 
 void handle_expire_timers() {
-	timer_node *timer_node;
+	timer_node *node;
 
 	while (!pqueue_is_empty(timer)) {
 		time_update();
-		timer_node = pqueue_min(timer);
+		node = pqueue_min(timer);
 
-		if (timer_node->deleted) {
+		if (node->deleted) {
 			pqueue_delmin(timer);
-			free(timer_node);
+			free(node);
 			continue;
 		}
 
-		if (timer_node->key > current_msec) {
+		if (node->key > current_msec) {
 			return;
 		}
 
-		if (timer_node->handler) {
-			timer_node->handler(timer_node->rq);
+		if (node->handler) {
+			node->handler(node->rq);
 		}
 
 		pqueue_delmin(timer);
-		free(timer_node);
+		free(node);
 	}
 }
 
@@ -86,4 +86,10 @@ void add_timer(struct http_request_s *rq, size_t timeout, timer_handler_pt handl
 	node->rq = rq;
 
 	pqueue_insert(timer, node);
+}
+
+void del_timer(struct http_request_s *rp) {
+	time_update();
+	timer_node *node = rp->timer;
+	node->deleted = 1;
 }

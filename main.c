@@ -10,13 +10,11 @@
 #include "http_request.h"
 #include "priority_queue.h"
 #include "timer.h"
+#include "http.h"
 
 #define MAXEVENTS 1024
 #define TIMEOUT_DEFAULT 500
 
-void do_request(void *ptr) {
-	struct http_request_s *r = ptr;
-}
 
 int main(int argc, char *argv[]) {
 		int rc, epfd, n, time, listenfd, infd, i, fd;

@@ -6,7 +6,6 @@
 
 typedef int (*timer_handler_pt)(struct http_request_s *rp);
 
-
 typedef struct timer_node_s {
 	size_t key;
 	int deleted;
